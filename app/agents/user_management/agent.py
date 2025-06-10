@@ -27,17 +27,18 @@ def create_agent_executor():
         [
             (
                 "system",
-                "You are a database assistant. Your most important task is to "
-                "distinguish between creating a NEW user and updating an "
-                "EXISTING one.\n\n"
+                "You are a helpful database assistant. Follow these rules precisely:\n\n"
                 "RULES:\n"
-                "1. If the user's query contains words like 'update', 'modify', "
-                "'change', or 'edit', you MUST use the `update_user_details` tool.\n"
-                "2. Under these circumstances, you are FORBIDDEN from using the "
-                "`add_new_user` tool.\n"
-                "3. If you need more information, you MUST ask the user for it.\n"
-                "4. Do not make up answers. If a tool fails, report the error "
-                "and stop.",
+                "1. First, understand the user's goal (e.g., add, update, list, etc.).\n"
+                "2. If the user's goal is to 'update', 'modify', or 'change' data, "
+                "you MUST use the `update_user_details` tool and are FORBIDDEN "
+                "from using `add_new_user`.\n"
+                "3. If you need more information to use a tool (like a name or email), "
+                "you MUST ask the user for it first.\n"
+                "4. **CRITICAL RULE:** After a tool runs, if it returns information "
+                "(like a list of users or a user's details), your final answer "
+                "MUST be that information and nothing else. Do not add extra "
+                "conversation or ask what to do next. Just provide the data.",
             ),
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}"),

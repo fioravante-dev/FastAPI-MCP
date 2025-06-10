@@ -1,24 +1,18 @@
-# app/persistence/database.py
 import time
 import mysql.connector
 from mysql.connector import pooling
 from app.core.config import settings
 
-connection_pool = None
-
 def init_db_with_retries():
     """
-    Initializes the database connection pool with a retry mechanism
-    to handle the race condition on startup.
+    Initializes and returns a database connection pool with a retry mechanism.
     """
-    global connection_pool
     retries = 10
-    delay = 3  # seconds
-
+    delay = 3
     for i in range(retries):
         try:
             print(f"Database connection attempt {i + 1}/{retries}...")
-            connection_pool = pooling.MySQLConnectionPool(
+            pool = pooling.MySQLConnectionPool(
                 pool_name="mypool",
                 pool_size=5,
                 host=settings.DB_HOST,
@@ -28,18 +22,18 @@ def init_db_with_retries():
                 password=settings.DB_PASSWORD,
             )
             print("Database connection pool initialized successfully.")
-            return
+            return pool
         except mysql.connector.Error as err:
             print(f"Connection failed: {err}. Retrying in {delay} seconds...")
             time.sleep(delay)
-
     raise Exception("Could not connect to the database after several retries.")
+
+connection_pool = init_db_with_retries()
 
 def create_tables():
     """Creates the 'users' table if it doesn't exist."""
     if connection_pool is None:
         raise RuntimeError("Database pool is not initialized.")
-
     connection = connection_pool.get_connection()
     cursor = connection.cursor()
     try:
@@ -57,6 +51,5 @@ def create_tables():
         cursor.close()
         connection.close()
 
-# --- Run initialization immediately when this module is imported ---
-init_db_with_retries()
+# Create tables immediately after the pool is initialized.
 create_tables()

@@ -1,8 +1,10 @@
+import mysql.connector
 from langchain_core.tools import tool
 from app.persistence import user_repository
 from app.schemas.user import (
     GetUserDetailsInput, AddUserInput, UpdateUserInput, DeleteUserInput
 )
+
 
 @tool
 def list_all_users() -> str:
@@ -26,8 +28,12 @@ def add_new_user(name: str, email: str) -> str:
     try:
         user_repository.add(name=name, email=email)
         return f"User '{name}' was successfully added."
-    except Exception:
-        return f"Error: A user with the email '{email}' might already exist."
+    # --- THE KEY FIX IS HERE ---
+    # We now ONLY catch the specific error for duplicate entries.
+    # Any other error (like a connection problem) will now crash the app
+    # and show us the real traceback.
+    except mysql.connector.IntegrityError:
+        return f"Error: A user with the email '{email}' already exists."
 
 @tool("update_user_details", args_schema=UpdateUserInput)
 def update_user_details(name: str, new_name: str = None, new_email: str = None) -> str:
@@ -41,7 +47,7 @@ def update_user_details(name: str, new_name: str = None, new_email: str = None) 
         if rows_affected == 0:
             return f"Error: No user found with the name '{name}' to update."
         return f"Successfully updated user '{name}'."
-    except Exception:
+    except mysql.connector.IntegrityError:
         return f"Error: The new email '{new_email}' might already be in use."
 
 @tool("delete_user", args_schema=DeleteUserInput)
