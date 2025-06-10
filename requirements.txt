@@ -1,0 +1,6 @@
+langchain
+langchain-groq
+fastapi
+uvicorn[standard]
+pydantic-settings
+mysql-connector-python
