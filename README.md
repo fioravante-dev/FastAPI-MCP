@@ -1,4 +1,4 @@
-# Enterprise AI Agent with FastAPI and Docker
+# AI Agent with FastAPI and Docker
 
 This project demonstrates how to build a robust, production-ready AI agent using a professional, layered architecture. The agent manages a user database through natural language commands, performing full CRUD (Create, Read, Update, Delete) operations.
 
@@ -26,7 +26,7 @@ The application uses a layered (N-Tier) architecture for separation of concerns 
 - **Persistence Layer (`/persistence`):** Handles all database interactions.
 
 ```
-text/mcp-fastapi-pro
+text/FastAPI-MCP
 ├── .env
 ├── docker-compose.yml
 ├── Dockerfile
@@ -70,8 +70,8 @@ Follow these steps to get the application stack running locally.
 ### 2. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
-cd mcp-fastapi-pro
+git clone https://github.com/fioravante-dev/FastAPI-MCP
+cd FastAPI-MCP
 ```
 
 ### 3. Configure Environment Variables (`.env` file)
