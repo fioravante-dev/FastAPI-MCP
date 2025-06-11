@@ -208,3 +208,5 @@ venv.bak
 
 # Docker
 docker-compose.override.yml
+
+data/*

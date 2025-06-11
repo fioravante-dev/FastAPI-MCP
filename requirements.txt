@@ -4,3 +4,6 @@ fastapi
 uvicorn[standard]
 pydantic-settings
 mysql-connector-python
+llama-index
+llama-index-llms-groq
+llama-index-embeddings-huggingface
