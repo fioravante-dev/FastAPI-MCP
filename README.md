@@ -89,9 +89,15 @@ DB_PORT=3306
 DB_NAME=agent_db
 DB_USER=myuser
 DB_PASSWORD=mypassword
-
-# --- Database Admin Settings ---
 DB_ROOT_PASSWORD=myrootpassword
+
+KEYCLOAK_ADMIN_USER=admin
+KEYCLOAK_ADMIN_PASSWORD=admin
+
+KEYCLOAK_SERVER_URL=http://keycloak:8080/
+KEYCLOAK_REALM=fastapi-realm
+KEYCLOAK_CLIENT_ID=fastapi-client
+KEYCLOAK_CLIENT_SECRET=yourSecretClientIdHere
 ```
 
 ### 4. Run the Application
