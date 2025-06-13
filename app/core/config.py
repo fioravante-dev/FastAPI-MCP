@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
     DB_ROOT_PASSWORD: str
+    KEYCLOAK_SERVER_URL: str
+    KEYCLOAK_REALM: str
+    KEYCLOAK_CLIENT_ID: str
+    KEYCLOAK_CLIENT_SECRET: str
+    KEYCLOAK_ADMIN_USER: str
+    KEYCLOAK_ADMIN_PASSWORD: str
 
 # Create a single instance of the settings to be used throughout the app
 settings = Settings()

@@ -1,10 +1,15 @@
 from fastapi import APIRouter, Depends
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.chat_service import ChatService, get_chat_service
+from app.core.security import require_role
 
 router = APIRouter()
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post(
+    "/chat",
+    response_model=ChatResponse,
+    dependencies=[Depends(require_role("admin"))],
+)
 async def chat_with_agent(
     request: ChatRequest,
     chat_service: ChatService = Depends(get_chat_service),
