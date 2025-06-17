@@ -75,3 +75,11 @@ Agora, usando sua aplicação (FastAPI ou outra), você pode:
   ```
   realm_access.roles
   ```
+
+  ## 7. Rotas para testar
+  Adicione o Token nas requisições para as seguintes rotas:
+
+  ![alt text](image-1.png)
+  ![alt text](image-2.png)
+
+  
