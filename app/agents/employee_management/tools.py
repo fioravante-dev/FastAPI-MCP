@@ -2,25 +2,10 @@ import mysql.connector
 from langchain_core.tools import tool
 from app.persistence import employee_repository
 from app.schemas.employee import (
-    GetEmployeeDetailsInput, AddEmployeeInput, UpdateEmployeeInput, DeleteEmployeeInput,
-    GetEmployeesByCompanyInput, GetEmployeesByStatusInput, GetEmployeesByCostCenterInput,
-    GetEmployeeSalaryInfoInput, GetEmployeesByDateRangeInput, GetEmployeeDetailsByNameInput
+    GetEmployeeDetailsInput, GetEmployeesByCompanyInput, GetEmployeesByStatusInput, 
+    GetEmployeesByCostCenterInput, GetEmployeeSalaryInfoInput, GetEmployeesByDateRangeInput, 
+    GetEmployeeDetailsByNameInput, GetDistinctValuesInput
 )
-
-
-@tool
-def list_all_employees() -> str:
-    """Lists all employees currently in the database."""
-    employees = employee_repository.list_all()
-    if not employees:
-        return "There are no employees in the database."
-    
-    result = []
-    for emp in employees:
-        status = " (TERMINATED)" if emp.get('termination_date') else " (ACTIVE)"
-        result.append(f"- {emp['full_name']} (ID: {emp['employee_id']}, Company: {emp['company_name']}){status}")
-    
-    return "\n".join(result)
 
 @tool
 def list_active_employees() -> str:
@@ -161,191 +146,176 @@ def get_employees_by_date_range(start_date: str, end_date: str, date_type: str) 
     except ValueError as e:
         return f"Error: {str(e)}"
 
-@tool("add_new_employee", args_schema=AddEmployeeInput)
-def add_new_employee(
-    employee_id: str, company_name: str, full_name: str, admission_date: str,
-    status_description: str, cost_center_name: str, salary: float, gender: str,
-    agent_id: int, termination_date: str = None, birth_date: str = None,
-    complementary_salary: float = None, salary_effective_date: str = None,
-    street_address: str = None, address_number: str = None, city_name: str = None,
-    race: str = None, postal_code: str = None, company_cod_senior_numemp: int = None,
-    employee_cod_senior_numcad: int = None, collaborator_type_code_senior_tipcol: int = None,
-    status_cod_senior_sitafa: int = None, cost_center_cod_senior_codccu: int = None
-) -> str:
-    """Adds a new employee to the database."""
-    try:
-        # Build employee data dictionary, excluding None values for optional fields
-        employee_data = {
-            'employee_id': employee_id,
-            'company_name': company_name,
-            'full_name': full_name,
-            'admission_date': admission_date,
-            'status_description': status_description,
-            'cost_center_name': cost_center_name,
-            'salary': salary,
-            'gender': gender,
-            'agent_id': agent_id
-        }
-        
-        # Add optional fields if provided
-        optional_fields = {
-            'termination_date': termination_date,
-            'birth_date': birth_date,
-            'complementary_salary': complementary_salary,
-            'salary_effective_date': salary_effective_date,
-            'street_address': street_address,
-            'address_number': address_number,
-            'city_name': city_name,
-            'race': race,
-            'postal_code': postal_code,
-            'company_cod_senior_numemp': company_cod_senior_numemp,
-            'employee_cod_senior_numcad': employee_cod_senior_numcad,
-            'collaborator_type_code_senior_tipcol': collaborator_type_code_senior_tipcol,
-            'status_cod_senior_sitafa': status_cod_senior_sitafa,
-            'cost_center_cod_senior_codccu': cost_center_cod_senior_codccu
-        }
-        
-        for field, value in optional_fields.items():
-            if value is not None:
-                employee_data[field] = value
-        
-        employee_repository.add(employee_data=employee_data)
-        return f"Employee '{full_name}' (ID: {employee_id}) was successfully added."
-    except mysql.connector.IntegrityError:
-        return f"Error: An employee with ID '{employee_id}' already exists."
-
-@tool("update_employee_details", args_schema=UpdateEmployeeInput)
-def update_employee_details(
-    employee_id: str, company_name: str = None, full_name: str = None,
-    admission_date: str = None, termination_date: str = None,
-    status_description: str = None, birth_date: str = None,
-    cost_center_name: str = None, salary: float = None,
-    complementary_salary: float = None, salary_effective_date: str = None,
-    gender: str = None, street_address: str = None, address_number: str = None,
-    city_name: str = None, race: str = None, postal_code: str = None,
-    company_cod_senior_numemp: int = None, employee_cod_senior_numcad: int = None,
-    collaborator_type_code_senior_tipcol: int = None, status_cod_senior_sitafa: int = None,
-    cost_center_cod_senior_codccu: int = None, agent_id: int = None
-) -> str:
-    """Modifies the details of an existing employee."""
-    # Build update data dictionary, excluding None values
-    update_data = {}
-    all_fields = {
-        'company_name': company_name,
-        'full_name': full_name,
-        'admission_date': admission_date,
-        'termination_date': termination_date,
-        'status_description': status_description,
-        'birth_date': birth_date,
-        'cost_center_name': cost_center_name,
-        'salary': salary,
-        'complementary_salary': complementary_salary,
-        'salary_effective_date': salary_effective_date,
-        'gender': gender,
-        'street_address': street_address,
-        'address_number': address_number,
-        'city_name': city_name,
-        'race': race,
-        'postal_code': postal_code,
-        'company_cod_senior_numemp': company_cod_senior_numemp,
-        'employee_cod_senior_numcad': employee_cod_senior_numcad,
-        'collaborator_type_code_senior_tipcol': collaborator_type_code_senior_tipcol,
-        'status_cod_senior_sitafa': status_cod_senior_sitafa,
-        'cost_center_cod_senior_codccu': cost_center_cod_senior_codccu,
-        'agent_id': agent_id
-    }
-    
-    for field, value in all_fields.items():
-        if value is not None:
-            update_data[field] = value
-    
-    if not update_data:
-        return "Error: You must provide at least one field to update."
-    
-    try:
-        rows_affected = employee_repository.update(
-            employee_id=employee_id, update_data=update_data
-        )
-        if rows_affected == 0:
-            return f"Error: No employee found with ID '{employee_id}' to update."
-        return f"Successfully updated employee with ID '{employee_id}'."
-    except mysql.connector.IntegrityError:
-        return f"Error: Update failed due to constraint violation (duplicate ID or invalid reference)."
-
-@tool("delete_employee", args_schema=DeleteEmployeeInput)
-def delete_employee(employee_id: str) -> str:
-    """Permanently deletes an existing employee."""
-    rows_affected = employee_repository.delete(employee_id=employee_id)
-    if rows_affected == 0:
-        return f"Error: No employee found with ID '{employee_id}' to delete."
-    return f"Employee with ID '{employee_id}' has been successfully deleted."
-
 @tool("get_employee_by_name", args_schema=GetEmployeeDetailsByNameInput)
 def get_employee_by_name(full_name: str) -> str:
-    """Finds a specific employee by their full name and returns detailed information."""
+    """Finds employees by their full name or part of their name and returns complete detailed information."""
     employees = employee_repository.get_by_name(full_name=full_name)
     if not employees:
-        return f"No employee found with name '{full_name}'."
+        return f"No employee found with name containing '{full_name}'."
     
     if len(employees) == 1:
         employee = employees[0]
         status = "TERMINATED" if employee.get('termination_date') else "ACTIVE"
-        result = f"""Employee Details:
-- ID: {employee['employee_id']}
-- Name: {employee['full_name']}
+        result = f"""Complete Employee Information:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 BASIC INFORMATION:
+- Employee ID: {employee['employee_id']}
+- Full Name: {employee['full_name']}
 - Company: {employee['company_name']}
-- Status: {status}
+- Employment Status: {status}
+- Gender: {employee.get('gender', 'N/A')}
+- Birth Date: {employee.get('birth_date', 'N/A')}
+- Race: {employee.get('race', 'N/A')}
+
+💼 EMPLOYMENT DETAILS:
 - Admission Date: {employee['admission_date']}
 - Cost Center: {employee['cost_center_name']}
-- Salary: ${employee['salary']:,.2f}"""
-        
-        if employee.get('complementary_salary'):
-            result += f"\n- Complementary Salary: ${employee['complementary_salary']:,.2f}"
+- Status Description: {employee['status_description']}"""
         
         if employee.get('termination_date'):
             result += f"\n- Termination Date: {employee['termination_date']}"
         
-        if employee.get('birth_date'):
-            result += f"\n- Birth Date: {employee['birth_date']}"
+        result += f"\n\n💰 SALARY INFORMATION:"
+        result += f"\n- Base Salary: ${employee['salary']:,.2f}"
         
-        if employee.get('city_name'):
-            result += f"\n- City: {employee['city_name']}"
+        if employee.get('complementary_salary') and employee['complementary_salary'] > 0:
+            total_salary = employee['salary'] + employee['complementary_salary']
+            result += f"\n- Complementary Salary: ${employee['complementary_salary']:,.2f}"
+            result += f"\n- Total Monthly Salary: ${total_salary:,.2f}"
+            result += f"\n- Annual Salary (Base): ${employee['salary'] * 12:,.2f}"
+            result += f"\n- Annual Salary (Total): ${total_salary * 12:,.2f}"
+        else:
+            result += f"\n- Annual Salary: ${employee['salary'] * 12:,.2f}"
         
-        if employee.get('gender'):
-            result += f"\n- Gender: {employee['gender']}"
+        if employee.get('salary_effective_date'):
+            result += f"\n- Salary Effective Date: {employee['salary_effective_date']}"
+        
+        result += f"\n\n🏠 ADDRESS INFORMATION:"
+        if employee.get('street_address'):
+            address = employee['street_address']
+            if employee.get('address_number'):
+                address += f", {employee['address_number']}"
+            result += f"\n- Address: {address}"
+        else:
+            result += f"\n- Address: N/A"
+        
+        result += f"\n- City: {employee.get('city_name', 'N/A')}"
+        result += f"\n- Postal Code: {employee.get('postal_code', 'N/A')}"
+        
+        # Technical codes section
+        result += f"\n\n🔧 SYSTEM CODES:"
+        result += f"\n- Company Code: {employee.get('company_cod_senior_numemp', 'N/A')}"
+        result += f"\n- Employee Code: {employee.get('employee_cod_senior_numcad', 'N/A')}"
+        result += f"\n- Collaborator Type Code: {employee.get('collaborator_type_code_senior_tipcol', 'N/A')}"
+        result += f"\n- Status Code: {employee.get('status_cod_senior_sitafa', 'N/A')}"
+        result += f"\n- Cost Center Code: {employee.get('cost_center_cod_senior_codccu', 'N/A')}"
+        result += f"\n- Agent ID: {employee.get('agent_id', 'N/A')}"
         
         return result
     else:
-        # Multiple employees with same name
-        result = [f"Found {len(employees)} employees with name '{full_name}':"]
-        for emp in employees:
-            status = " (TERMINATED)" if emp.get('termination_date') else " (ACTIVE)"
-            result.append(f"- {emp['full_name']} (ID: {emp['employee_id']}, Company: {emp['company_name']}){status}")
-        result.append("\nPlease use the employee ID to get specific details.")
+        # Multiple employees found
+        result = [f"Found {len(employees)} employees with name containing '{full_name}':"]
+        result.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        for i, emp in enumerate(employees, 1):
+            status = "TERMINATED" if emp.get('termination_date') else "ACTIVE"
+            result.append(f"{i}. {emp['full_name']}")
+            result.append(f"   • ID: {emp['employee_id']}")
+            result.append(f"   • Company: {emp['company_name']}")
+            result.append(f"   • Status: {status}")
+            result.append(f"   • Cost Center: {emp['cost_center_name']}")
+            result.append(f"   • Salary: ${emp['salary']:,.2f}")
+            if emp.get('termination_date'):
+                result.append(f"   • Terminated: {emp['termination_date']}")
+            result.append("")
+        
+        result.append("💡 To get complete details for a specific employee, search with their exact name or use their Employee ID.")
         return "\n".join(result)
 
 @tool(return_direct=True)
 def greet_employee_manager() -> str:
     """Provides a greeting and explains the employee management agent's capabilities."""
-    return """Hello! I am an employee database management assistant. I can help you with:
+    return """Hello! I am an employee database assistant. I can help you with:
 
-📊 **Listing & Searching:**
-- List all employees, active employees, or terminated employees
-- Search employees by ID, company, status, or cost center
-- Filter employees by date ranges (admission, termination, birth dates)
+📊 **Employee Information & Search:**
+- List active employees or terminated employees
+- Search employees by ID or name (full name or partial name)
+- Get complete detailed information for any employee
+
+🏢 **Filtering & Organization:**
+- Find employees by company
+- Filter by employment status or cost center
+- Search by date ranges (admission, termination, birth dates)
 
 💰 **Salary Information:**
-- Get detailed salary information for specific employees
+- Get detailed salary breakdowns
 - View base salary, complementary salary, and totals
+- Calculate annual salary amounts
 
-👥 **Employee Management:**
-- Add new employees with comprehensive details
-- Update existing employee information
-- Delete employee records
+🔍 **Advanced Search:**
+- Search by partial names (e.g., "John" will find "John Smith")
+- Filter employees by various criteria
+- Get comprehensive employee profiles
 
-🔍 **Advanced Queries:**
-- Find employees by various criteria
-- Get company-specific employee lists
-- Filter by employment status or cost centers
+📈 **Data Analysis:**
+- Get distinct value counts and lists for dimensions like:
+  • Companies, cities, cost centers
+  • Employee races, genders, status descriptions
+- Answer questions like "How many companies are there?" or "List all unique cities"
 
-Just ask me what you'd like to do with the employee database!"""
+⚠️ **Important:** Due to the large database size, I only provide filtered searches. Please specify criteria like name, company, or status rather than requesting all employees.
+
+Just ask me what you'd like to know about the employees!"""
+
+@tool("get_distinct_values_summary", args_schema=GetDistinctValuesInput)
+def get_distinct_values_summary(dimension: str) -> str:
+    """
+    Calculates the total count of unique values for a given dimension and lists them.
+    Use this tool to answer questions like 'How many distinct companies are there and what are their names?' 
+    or 'List all unique cities present in the employee data'.
+    The 'dimension' parameter must be one of the following: 'company_name', 'city_name', 'cost_center_name', 'race', 'gender', 'status_description'.
+    """
+    
+    # Define allowed dimensions for security
+    allowed_dimensions = ['company_name', 'city_name', 'cost_center_name', 'race', 'gender', 'status_description']
+    
+    if dimension not in allowed_dimensions:
+        return f"Error: Analysis of dimension '{dimension}' is not permitted or does not exist."
+
+    try:
+        # Get the count of distinct values
+        distinct_count = employee_repository.count_distinct(column=dimension)
+        
+        # Get the list of distinct values
+        distinct_values = employee_repository.list_distinct(column=dimension)
+
+        if distinct_count == 0:
+            return f"No distinct values found for the dimension '{dimension}'."
+
+        # Format the result clearly
+        result = [
+            f"📊 Summary for dimension: '{dimension.replace('_', ' ').title()}'",
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"Total unique values found: {distinct_count}\n"
+        ]
+
+        # Limit display to avoid overwhelming output if there are thousands of values
+        limit = 100
+        if distinct_count > limit:
+            result.append(f"Showing the first {limit} unique values (sorted alphabetically):")
+        else:
+            result.append("List of unique values:")
+        
+        result.extend([f"- {value}" for value in distinct_values[:limit]])
+
+        if distinct_count > limit:
+            result.append(f"\n...and {distinct_count - limit} more.")
+            
+        return "\n".join(result)
+
+    except Exception as e:
+        return f"An error occurred while analyzing the dimension '{dimension}'. Please check if the dimension is correct and try again."
+
+@tool("error_response", args_schema=GetEmployeeDetailsInput)
+def error_response(error_message: str) -> str:
+    """Returns a user-friendly error message when the AI cannot perform a requested task."""
+    return f"❌ I'm not able to perform that task. {error_message}\n\nI can help you with:\n• Searching for employees by name, ID, company, or status\n• Getting detailed employee information\n• Filtering employees by various criteria\n• Providing salary information\n\nPlease let me know how else I can assist you!"

@@ -3,7 +3,6 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 
 from app.agents.employee_management.tools import (
-    list_all_employees,
     list_active_employees,
     list_terminated_employees,
     get_employee_details,
@@ -13,17 +12,15 @@ from app.agents.employee_management.tools import (
     get_employees_by_cost_center,
     get_employee_salary_info,
     get_employees_by_date_range,
-    add_new_employee,
-    update_employee_details,
-    delete_employee,
     greet_employee_manager,
+    get_distinct_values_summary,
+    error_response,
 )
 from app.core.config import settings
 
 def create_agent_executor():
     """Creates the agent for employee management."""
     tools = [
-        # list_all_employees,
         list_active_employees,
         list_terminated_employees,
         get_employee_details,
@@ -33,33 +30,32 @@ def create_agent_executor():
         get_employees_by_cost_center,
         get_employee_salary_info,
         get_employees_by_date_range,
-        add_new_employee,
-        update_employee_details,
-        delete_employee,
         greet_employee_manager,
+        get_distinct_values_summary,
+        error_response,
     ]
 
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                "You are a helpful employee database assistant. Follow these rules precisely:\n\n"
+                "You are a helpful employee database assistant with READ-ONLY access. Follow these rules precisely:\n\n"
                 "RULES:\n"
-                "1. First, understand the user's goal (e.g., add, update, list, search, etc.).\n"
-                "2. If the user's goal is to 'update', 'modify', or 'change' employee data, "
-                "you MUST use the `update_employee_details` tool and are FORBIDDEN "
-                "from using `add_new_employee`.\n"
-                "3. If you need more information to use a tool (like an employee ID, company name, etc.), "
-                "you MUST ask the user for it first.\n"
-                "4. **CRITICAL RULE:** After a tool runs, if it returns information "
-                "(like a list of employees or employee details), your final answer "
-                "MUST be that information and nothing else. Do not add extra "
+                "1. You can ONLY search for, filter, and retrieve employee information.\n"
+                "2. You CANNOT add, update, modify, or delete any employee data.\n"
+                "3. If a user asks to add, update, modify, or delete employee data, "
+                "use the `Error_response` tool to explain that these operations are not supported.\n"
+                "4. If you need more information to search (like an employee name, ID, company, etc.), "
+                "ask the user for it first.\n"
+                "5. **CRITICAL RULE:** After a tool runs and returns information, "
+                "your final answer MUST be that information. Do not add extra "
                 "conversation or ask what to do next. Just provide the data.\n"
-                "5. When dealing with dates, use YYYY-MM-DD format.\n"
-                "6. For salary information, format numbers with commas and currency symbols when appropriate.\n"
-                "7. Always distinguish between active and terminated employees when relevant.\n"
-                "8. When searching by date ranges, ask for clarification on which type of date "
-                "(admission, termination, or birth) if not specified.",
+                "6. When dealing with dates, use YYYY-MM-DD format.\n"
+                "7. For salary information, format numbers with commas and currency symbols when appropriate.\n"
+                "8. Always distinguish between active and terminated employees when relevant.\n"
+                "9. When searching by date ranges, ask for clarification on which type of date "
+                "(admission, termination, or birth) if not specified.\n"
+                "10. Use the `get_employee_by_name` tool for name-based searches (supports partial matches).",
             ),
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}"),

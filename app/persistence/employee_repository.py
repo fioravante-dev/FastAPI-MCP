@@ -191,3 +191,38 @@ def get_by_name(full_name: str) -> List[Dict[str, Any]]:
     finally:
         cursor.close()
         connection.close()
+
+def count_distinct(column: str) -> int:
+    """Get the count of distinct values for a specified column."""
+    connection = connection_pool.get_connection()
+    cursor = connection.cursor()
+    try:
+        # Use parameterized query to prevent SQL injection
+        allowed_columns = ['company_name', 'city_name', 'cost_center_name', 'race', 'gender', 'status_description']
+        if column not in allowed_columns:
+            raise ValueError(f"Column '{column}' is not allowed for distinct analysis")
+        
+        query = f"SELECT COUNT(DISTINCT {column}) FROM employees WHERE {column} IS NOT NULL"
+        cursor.execute(query)
+        result = cursor.fetchone()
+        return result[0] if result else 0
+    finally:
+        cursor.close()
+        connection.close()
+
+def list_distinct(column: str, limit: int = 100) -> List[str]:
+    """Get a list of distinct values for a specified column."""
+    connection = connection_pool.get_connection()
+    cursor = connection.cursor()
+    try:
+        # Use parameterized query to prevent SQL injection
+        allowed_columns = ['company_name', 'city_name', 'cost_center_name', 'race', 'gender', 'status_description']
+        if column not in allowed_columns:
+            raise ValueError(f"Column '{column}' is not allowed for distinct analysis")
+        
+        query = f"SELECT DISTINCT {column} FROM employees WHERE {column} IS NOT NULL ORDER BY {column} LIMIT %s"
+        cursor.execute(query, (limit,))
+        return [row[0] for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        connection.close()
